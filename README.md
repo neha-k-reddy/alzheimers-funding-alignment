@@ -37,7 +37,7 @@ To run the website locally:
 ## Citation
 
 Reddy, N. (2025). The Alzheimer's Funding Atlas: A state-level analysis of
-NIH Alzheimer's research funding, 2019–2023. [URL - to be added after deployment]
+NIH Alzheimer's research funding, 2019–2023. https://alzheimers-funding-alignment.vercel.app/
 
 ## License
 
