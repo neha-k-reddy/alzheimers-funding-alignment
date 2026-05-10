@@ -5,6 +5,7 @@ import numbers from "../../public/data/numbers.json";
 const ne = numbers.landing.northeast_funding_per_death;
 const west = numbers.landing.west_funding_per_death;
 const ratio = numbers.landing.ne_to_west_ratio_display;
+const r1Coef = numbers.landing.r1_university_coefficient_millions;
 const stateData2023 = numbers.state_year["2023"];
 const lastUpdated = numbers.metadata.last_updated;
 
@@ -188,7 +189,7 @@ function formatCurrency(value: number): string {
     .map-section {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 24px 24px 64px 24px;
+      padding: 24px 24px 48px 24px;
     }
     .map-card {
       background-color: white;
@@ -249,6 +250,115 @@ function formatCurrency(value: number): string {
       flex-wrap: wrap;
       gap: 8px;
     }
+
+    /* KEY INSIGHTS */
+    .insights-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px 80px 24px;
+    }
+    .insights-heading {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0F1535;
+      text-align: center;
+      margin: 0 0 32px 0;
+    }
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 1000px) {
+      .insights-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .insights-grid { grid-template-columns: 1fr; }
+    }
+    .insight-card {
+      background-color: white;
+      border-radius: 12px;
+      border: 1px solid #E5E7EB;
+      padding: 24px;
+    }
+    .insight-icon {
+      width: 44px;
+      height: 44px;
+      background-color: #F5F3FF;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      margin-bottom: 16px;
+    }
+    .insight-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 10px 0;
+    }
+    .insight-body {
+      font-size: 14px;
+      line-height: 1.55;
+      color: #4B5563;
+      margin: 0;
+    }
+    .insight-emphasis {
+      font-weight: 600;
+      color: #0F1535;
+    }
+
+    /* PROJECT SUMMARY BAR */
+    .summary-bar {
+      max-width: 1280px;
+      margin: 0 auto 64px auto;
+      padding: 0 24px;
+    }
+    .summary-bar-inner {
+      background-color: #F5F3FF;
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .summary-bar-text {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      min-width: 280px;
+    }
+    .summary-icon-wrap {
+      width: 44px;
+      height: 44px;
+      background-color: #C4B5FD;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+    .summary-text {
+      font-size: 14px;
+      color: #4B5563;
+      line-height: 1.55;
+    }
+    .summary-link {
+      color: #7C3AED;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .summary-link:hover { color: #5B21B6; }
   </style>
 
   <section class="hero-section">
@@ -298,38 +408,102 @@ function formatCurrency(value: number): string {
       <div class="map-body">
         <div>
           <div class="legend-title">USD per Death</div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background-color: #4C1D95;"></div>
-            $80,000 or more
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background-color: #7C3AED;"></div>
-            $60,000 – $80,000
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background-color: #A78BFA;"></div>
-            $40,000 – $60,000
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background-color: #F9A8D4;"></div>
-            $20,000 – $40,000
-          </div>
-          <div class="legend-item">
-            <div class="legend-swatch" style="background-color: #FCE7F3;"></div>
-            Less than $20,000
-          </div>
+          <div class="legend-item"><div class="legend-swatch" style="background-color: #4C1D95;"></div>$80,000 or more</div>
+          <div class="legend-item"><div class="legend-swatch" style="background-color: #7C3AED;"></div>$60,000 – $80,000</div>
+          <div class="legend-item"><div class="legend-swatch" style="background-color: #A78BFA;"></div>$40,000 – $60,000</div>
+          <div class="legend-item"><div class="legend-swatch" style="background-color: #F9A8D4;"></div>$20,000 – $40,000</div>
+          <div class="legend-item"><div class="legend-swatch" style="background-color: #FCE7F3;"></div>Less than $20,000</div>
         </div>
 
         <div id="choropleth-map" class="map-container"></div>
       </div>
 
       <div class="map-footer">
-        <div>
-          Data sources: CDC WONDER (2019–2023), NIH RePORTER (2023),
-          NORC Dementia DataHub, U.S. Census Bureau, BLS CPI
-        </div>
+        <div>Data sources: CDC WONDER (2019–2023), NIH RePORTER (2023), NORC Dementia DataHub, U.S. Census Bureau, BLS CPI</div>
         <div>Last updated: {lastUpdated}</div>
       </div>
+    </div>
+  </section>
+
+  <section class="insights-section">
+    <h2 class="insights-heading">Key Insights at a Glance</h2>
+
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3v18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M7 14l4-4 4 4 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3 class="insight-title">Large Regional Disparities</h3>
+        <p class="insight-body">
+          Research funding per death varies over <span class="insight-emphasis">{ratio}</span>
+          between regions, independent of disease burden.
+        </p>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-7h6v7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3 class="insight-title">Driven by Location, Not Need</h3>
+        <p class="insight-body">
+          States with more R1 research universities receive significantly more funding per death.
+          Each additional R1 university is associated with <span class="insight-emphasis">${r1Coef}M</span>
+          more NIH funding (p &lt; 0.001).
+        </p>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6 5.87v-2a4 4 0 0 0-3-3.87M9 8a4 4 0 1 1 8 0 4 4 0 0 1-8 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3 class="insight-title">Hundreds of Thousands Affected</h3>
+        <p class="insight-body">
+          Alzheimer's was the <span class="insight-emphasis">6th leading cause</span> of death in the U.S. in 2023,
+          with over 114,000 deaths nationally (CDC).
+        </p>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3v18M3 8h18M5 8l-2 6h6L7 8M19 8l-2 6h6l-2-6M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3 class="insight-title">Policy Implications</h3>
+        <p class="insight-body">
+          States with the highest mortality (e.g., Mississippi, Alabama) receive
+          the lowest per-capita research investment.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="summary-bar">
+    <div class="summary-bar-inner">
+      <div class="summary-bar-text">
+        <div class="summary-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9.5 2C7 2 5 4 5 6.5c0 .5.1 1 .2 1.4C3.9 8.6 3 10 3 11.5c0 1.3.6 2.4 1.5 3.2-.3.5-.5 1.2-.5 1.8 0 1.9 1.6 3.5 3.5 3.5.5 0 1-.1 1.4-.3.5 1 1.5 1.7 2.6 1.7 1.4 0 2.5-1 2.8-2.3.3.1.6.1.9.1 2 0 3.6-1.6 3.6-3.6 0-.7-.2-1.3-.5-1.9.9-.8 1.5-2 1.5-3.2 0-1.5-.9-2.9-2.2-3.6.1-.5.2-1 .2-1.4C17 4 15 2 12.5 2c-.9 0-1.7.3-2.4.7-.7-.4-1.5-.7-2.4-.7H9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+          </svg>
+        </div>
+        <div class="summary-text">
+          This project combines public health data, research funding data, and demographic information
+          to uncover inequities and inform fairer allocation of resources.
+        </div>
+      </div>
+      <a href="/paper.pdf" class="summary-link">
+        Read the Full Paper
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        </svg>
+      </a>
     </div>
   </section>
 
@@ -372,7 +546,6 @@ function formatCurrency(value: number): string {
         );
       });
 
-      // Discrete colorscale: 5 buckets, each maps to a fixed color band
       var discreteColorscale = [
         [0.0, bucketColors[0]], [0.2, bucketColors[0]],
         [0.2, bucketColors[1]], [0.4, bucketColors[1]],
