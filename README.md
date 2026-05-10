@@ -1,4 +1,4 @@
-# The Alzheimer's Funding Atlas
+# The Alzheimer's Funding Alignment
 
 A state-level analysis of NIH Alzheimer's research funding equity, 2019–2023.
 
@@ -49,3 +49,4 @@ Code: MIT License. Data: public domain (federal sources).
 - [ ] Verify all GitHub links resolve
 - [ ] Confirm reproducibility instructions work from a fresh clone
 - [ ] Update "Last Updated" date on website
+
