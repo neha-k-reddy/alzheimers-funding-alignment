@@ -1,7 +1,637 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import numbers from "../../public/data/numbers.json";
+
+const reg = numbers.regression;
+const lastUpdated = numbers.metadata.last_updated;
+
+function formatCoef(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function pValueDisplay(p: number): string {
+  if (p < 0.001) return "< 0.001";
+  return p.toFixed(4);
+}
+
+function pValueStars(p: number): string {
+  if (p < 0.001) return "***";
+  if (p < 0.01) return "**";
+  if (p < 0.05) return "*";
+  return "";
+}
 ---
 
 <Layout title="Methodology — Alzheimer's Funding Alignment">
-  <h1 class="text-4xl font-bold pt-32 px-6">Methodology</h1>
+  <style is:global>
+    .meth-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 24px 80px 24px;
+    }
+    .meth-title {
+      font-size: 40px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+    }
+    .meth-intro {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #4B5563;
+      max-width: 720px;
+      margin: 0 0 32px 0;
+    }
+    .meth-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 1000px) {
+      .meth-grid { grid-template-columns: 1fr; }
+    }
+    .meth-main { display: flex; flex-direction: column; gap: 24px; }
+    .meth-side { display: flex; flex-direction: column; gap: 24px; }
+    .panel {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 20px 0;
+    }
+
+    /* APPROACH STEPS */
+    .approach-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .approach-grid { grid-template-columns: 1fr; }
+      .approach-step::before { display: none !important; }
+    }
+    .approach-step {
+      position: relative;
+      text-align: center;
+      padding: 0 4px;
+    }
+    .approach-step::before {
+      content: "";
+      position: absolute;
+      top: 28px;
+      left: 60%;
+      right: -40%;
+      height: 1px;
+      border-top: 1.5px dashed #C4B5FD;
+      z-index: 0;
+    }
+    .approach-step:last-child::before { display: none; }
+    .approach-icon-wrap {
+      width: 56px;
+      height: 56px;
+      background-color: #F5F3FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      margin: 0 auto 8px auto;
+      position: relative;
+      z-index: 1;
+    }
+    .approach-num {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      background-color: #7C3AED;
+      color: white;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 22px;
+      margin-bottom: 8px;
+    }
+    .approach-step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 6px 0;
+    }
+    .approach-step-body {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #4B5563;
+      margin: 0;
+    }
+
+    /* REGRESSION TABLE */
+    .reg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .reg-table thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: #7C3AED;
+      font-weight: 600;
+      border-bottom: 1px solid #E5E7EB;
+      font-size: 13px;
+    }
+    .reg-table thead th.num {
+      text-align: right;
+    }
+    .reg-table tbody td {
+      padding: 12px;
+      border-bottom: 1px solid #F3F4F6;
+      vertical-align: top;
+    }
+    .reg-table tbody td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .reg-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .reg-var {
+      font-weight: 600;
+      color: #0F1535;
+    }
+    .reg-desc {
+      color: #6B7280;
+      font-size: 12.5px;
+    }
+    .reg-summary {
+      background-color: #F5F3FF;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .reg-summary-icon {
+      width: 32px;
+      height: 32px;
+      background-color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .reg-summary-text {
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.55;
+    }
+    .reg-summary-stats {
+      font-weight: 600;
+      color: #0F1535;
+    }
+    .reg-summary-stats span {
+      margin-right: 14px;
+    }
+
+    /* CALLOUTS */
+    .callout {
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      gap: 14px;
+      align-items: start;
+    }
+    .callout-warn {
+      background-color: #FFFBEB;
+      border: 1px solid #FDE68A;
+    }
+    .callout-trans {
+      background-color: #F5F3FF;
+      border: 1px solid #DDD6FE;
+    }
+    .callout-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .callout-warn .callout-icon { color: #D97706; }
+    .callout-trans .callout-icon { color: #7C3AED; }
+    .callout-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+    }
+    .callout-warn .callout-title { color: #92400E; }
+    .callout-trans .callout-title { color: #0F1535; }
+    .callout-body {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #4B5563;
+      margin: 0;
+    }
+
+    /* DATA SOURCES SIDEBAR */
+    .sources-list { display: flex; flex-direction: column; gap: 14px; }
+    .source-row {
+      display: flex;
+      gap: 12px;
+      align-items: start;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .source-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .source-icon {
+      width: 36px;
+      height: 36px;
+      background-color: #F5F3FF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      font-weight: 700;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .source-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0;
+    }
+    .source-desc {
+      font-size: 12.5px;
+      color: #6B7280;
+      margin: 2px 0 0 0;
+      line-height: 1.45;
+    }
+
+    /* RESOURCES */
+    .resources-list { display: flex; flex-direction: column; gap: 14px; }
+    .resource-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .resource-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .resource-icon {
+      width: 32px;
+      height: 32px;
+      background-color: #F5F3FF;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .resource-text { flex: 1; min-width: 0; }
+    .resource-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0;
+    }
+    .resource-sub {
+      font-size: 12px;
+      color: #6B7280;
+      margin: 2px 0 0 0;
+    }
+    .resource-link {
+      color: #7C3AED;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .resource-link:hover { color: #5B21B6; }
+
+    .meta-box {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .meta-icon {
+      width: 36px;
+      height: 36px;
+      background-color: #F5F3FF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .meta-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0;
+    }
+    .meta-value {
+      font-size: 13px;
+      color: #4B5563;
+      margin: 4px 0 0 0;
+    }
+  </style>
+
+  <div class="meth-page">
+    <h1 class="meth-title">Methodology &amp; Data</h1>
+    <p class="meth-intro">
+      This project uses a panel regression approach to examine how state
+      characteristics are associated with NIH research funding per Alzheimer's
+      death over the period 2019–2023.
+    </p>
+
+    <div class="meth-grid">
+      <div class="meth-main">
+
+        <!-- OUR APPROACH -->
+        <div class="panel">
+          <h2 class="panel-title">Our Approach</h2>
+          <div class="approach-grid">
+            <div class="approach-step">
+              <div class="approach-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+              </div>
+              <div class="approach-num">1</div>
+              <h4 class="approach-step-title">Data Collection</h4>
+              <p class="approach-step-body">
+                Gathered data from federal sources on AD mortality, NIH funding,
+                and state demographics.
+              </p>
+            </div>
+            <div class="approach-step">
+              <div class="approach-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              </div>
+              <div class="approach-num">2</div>
+              <h4 class="approach-step-title">Data Processing</h4>
+              <p class="approach-step-body">
+                Cleaned, merged, and standardized datasets across all states
+                and years (2019–2023).
+              </p>
+            </div>
+            <div class="approach-step">
+              <div class="approach-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="approach-num">3</div>
+              <h4 class="approach-step-title">Econometric Analysis</h4>
+              <p class="approach-step-body">
+                Pooled OLS with HC3 robust standard errors to identify factors
+                associated with funding per death.
+              </p>
+            </div>
+            <div class="approach-step">
+              <div class="approach-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+              </div>
+              <div class="approach-num">4</div>
+              <h4 class="approach-step-title">Derive Metrics</h4>
+              <p class="approach-step-body">
+                Computed funding per death and per 65+ resident, plus regional
+                aggregates and rankings.
+              </p>
+            </div>
+            <div class="approach-step">
+              <div class="approach-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 6 8 12 8 12s8-6 8-12a8 8 0 0 0-8-8z"/></svg>
+              </div>
+              <div class="approach-num">5</div>
+              <h4 class="approach-step-title">Visualization</h4>
+              <p class="approach-step-body">
+                Built interactive tools to explore patterns, disparities, and
+                trends across states.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- REGRESSION RESULTS -->
+        <div class="panel">
+          <h2 class="panel-title">Regression Results: Factors Associated with NIH Funding</h2>
+          <p style="font-size: 13px; color: #6B7280; margin: -12px 0 18px 0;">
+            Dependent variable: Total NIH AD research funding per state-year (USD)
+          </p>
+
+          <table class="reg-table">
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Description</th>
+                <th class="num">Coefficient</th>
+                <th class="num">Std. Error</th>
+                <th class="num">p-value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reg.coefficients.filter(c => c.raw_name !== "const").map((c) => (
+                <tr>
+                  <td class="reg-var">{c.variable}</td>
+                  <td class="reg-desc">{c.description}</td>
+                  <td class="num">{formatCoef(c.coefficient)}</td>
+                  <td class="num">{formatCoef(c.std_error)}</td>
+                  <td class="num">{pValueDisplay(c.p_value)} {pValueStars(c.p_value)}</td>
+                </tr>
+              ))}
+              {reg.coefficients.filter(c => c.raw_name === "const").map((c) => (
+                <tr>
+                  <td class="reg-var">Constant</td>
+                  <td class="reg-desc">Intercept</td>
+                  <td class="num">{formatCoef(c.coefficient)}</td>
+                  <td class="num">{formatCoef(c.std_error)}</td>
+                  <td class="num">{pValueDisplay(c.p_value)} {pValueStars(c.p_value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="reg-summary">
+            <div class="reg-summary-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="reg-summary-text">
+              <div class="reg-summary-stats">
+                <span>R² = {reg.r_squared}</span>
+                <span>Adj. R² = {reg.adj_r_squared}</span>
+                <span>F = {reg.f_statistic}</span>
+                <span>p &lt; 0.001</span>
+                <span>N = {reg.n_observations}</span>
+              </div>
+              <div style="margin-top: 6px;">
+                Research infrastructure (R1 universities) is the strongest predictor of funding per death,
+                not disease burden. Mortality rate is not statistically significant.
+              </div>
+            </div>
+          </div>
+
+          <p style="font-size: 12px; color: #9CA3AF; margin: 14px 0 0 0;">
+            Significance: *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05
+          </p>
+        </div>
+
+        <!-- IMPORTANT NOTE -->
+        <div class="callout callout-warn">
+          <div class="callout-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <p class="callout-title">Important Note</p>
+            <p class="callout-body">
+              This analysis is observational and cannot prove causation.
+              Funding decisions are influenced by many factors not captured in
+              this model, including research quality, historical investments,
+              and strategic priorities. The regression results reflect the
+              final cleaned dataset; the published paper reports preliminary
+              values for some coefficients from an earlier version of the
+              analysis. Qualitative findings — particularly that mortality
+              rate is not a statistically significant predictor of NIH funding —
+              are identical across both versions.
+            </p>
+          </div>
+        </div>
+
+        <!-- COMMITMENT TO TRANSPARENCY -->
+        <div class="callout callout-trans">
+          <div class="callout-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p class="callout-title">Commitment to Transparency</p>
+            <p class="callout-body">
+              All data, code, and methodology are publicly available to ensure
+              transparency, reproducibility, and continued research into
+              health equity and research funding.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="meth-side">
+        <div class="panel">
+          <h2 class="panel-title">Data Sources</h2>
+          <div class="sources-list">
+            <div class="source-row">
+              <div class="source-icon">CDC</div>
+              <div>
+                <p class="source-name">CDC WONDER (2019–2023)</p>
+                <p class="source-desc">Alzheimer's disease mortality (ICD-10 G30)</p>
+              </div>
+            </div>
+            <div class="source-row">
+              <div class="source-icon">NIH</div>
+              <div>
+                <p class="source-name">NIH RePORTER (2019–2023)</p>
+                <p class="source-desc">NIH research project funding tagged "Alzheimer's Disease"</p>
+              </div>
+            </div>
+            <div class="source-row">
+              <div class="source-icon">★</div>
+              <div>
+                <p class="source-name">NORC Dementia DataHub</p>
+                <p class="source-desc">State-level dementia prevalence estimates</p>
+              </div>
+            </div>
+            <div class="source-row">
+              <div class="source-icon">CB</div>
+              <div>
+                <p class="source-name">U.S. Census Bureau (2019–2023)</p>
+                <p class="source-desc">State population estimates and demographics</p>
+              </div>
+            </div>
+            <div class="source-row">
+              <div class="source-icon">BLS</div>
+              <div>
+                <p class="source-name">Bureau of Labor Statistics</p>
+                <p class="source-desc">Consumer Price Index for inflation adjustment to 2024 USD</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Project Resources</h2>
+          <div class="resources-list">
+            <div class="resource-row">
+              <div class="resource-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="resource-text">
+                <p class="resource-label">Research Paper (PDF)</p>
+                <p class="resource-sub">Full paper with methodology and results</p>
+              </div>
+              <a href="/paper.pdf" class="resource-link" target="_blank" rel="noopener" aria-label="Open paper">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </a>
+            </div>
+            <div class="resource-row">
+              <div class="resource-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              </div>
+              <div class="resource-text">
+                <p class="resource-label">GitHub Repository</p>
+                <p class="resource-sub">Code, data, and documentation</p>
+              </div>
+              <a href="https://github.com/neha-k-reddy/alzheimers-funding-alignment" class="resource-link" target="_blank" rel="noopener" aria-label="Open GitHub repo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+            <div class="resource-row">
+              <div class="resource-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+              </div>
+              <div class="resource-text">
+                <p class="resource-label">Final Dataset</p>
+                <p class="resource-sub">51 states × 5 years panel (CSV)</p>
+              </div>
+              <a href="https://github.com/neha-k-reddy/alzheimers-funding-alignment/blob/main/data/final_dataset.csv" class="resource-link" target="_blank" rel="noopener" aria-label="Open dataset">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+            <div class="resource-row">
+              <div class="resource-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div class="resource-text">
+                <p class="resource-label">Reproducibility Guide</p>
+                <p class="resource-sub">Step-by-step to replicate the analysis</p>
+              </div>
+              <a href="https://github.com/neha-k-reddy/alzheimers-funding-alignment#readme" class="resource-link" target="_blank" rel="noopener" aria-label="Open README">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-box">
+          <div class="meta-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div>
+            <p class="meta-label">Last Updated</p>
+            <p class="meta-value">{lastUpdated} · Data through 2023</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </Layout>

@@ -1,7 +1,614 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import numbers from "../../public/data/numbers.json";
+
+const lastUpdated = numbers.metadata.last_updated;
 ---
 
 <Layout title="How I Built This — Alzheimer's Funding Alignment">
-  <h1 class="text-4xl font-bold pt-32 px-6">How I Built This</h1>
+  <style is:global>
+    .built-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 24px 80px 24px;
+    }
+    .built-header {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 900px) {
+      .built-header { grid-template-columns: 1fr; }
+    }
+    .built-title {
+      font-size: 40px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+    }
+    .built-intro {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #4B5563;
+      margin: 0;
+      max-width: 560px;
+    }
+    .quote-card {
+      background-color: #F5F3FF;
+      border-radius: 12px;
+      padding: 24px;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #4B5563;
+      display: flex;
+      gap: 12px;
+      align-items: start;
+    }
+    .quote-mark {
+      font-size: 36px;
+      color: #C4B5FD;
+      line-height: 0.9;
+      font-family: Georgia, serif;
+      flex-shrink: 0;
+    }
+    .built-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 1000px) {
+      .built-grid { grid-template-columns: 1fr; }
+    }
+    .built-main { display: flex; flex-direction: column; gap: 24px; }
+    .built-side { display: flex; flex-direction: column; gap: 24px; }
+
+    .panel {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 20px 0;
+    }
+
+    /* JOURNEY TIMELINE */
+    .journey-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      position: relative;
+    }
+    @media (max-width: 800px) {
+      .journey-grid { grid-template-columns: 1fr; }
+      .journey-step::before { display: none !important; }
+    }
+    .journey-step {
+      position: relative;
+      text-align: center;
+      padding: 0 4px;
+    }
+    .journey-step::before {
+      content: "";
+      position: absolute;
+      top: 28px;
+      left: 60%;
+      right: -40%;
+      height: 1px;
+      border-top: 1.5px dashed #C4B5FD;
+      z-index: 0;
+    }
+    .journey-step:last-child::before { display: none; }
+    .journey-icon-wrap {
+      width: 56px;
+      height: 56px;
+      background-color: #F5F3FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      margin: 0 auto 8px auto;
+      position: relative;
+      z-index: 1;
+    }
+    .journey-num {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      background-color: #7C3AED;
+      color: white;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 22px;
+      margin-bottom: 8px;
+    }
+    .journey-step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 6px 0;
+    }
+    .journey-step-body {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #4B5563;
+      margin: 0 0 10px 0;
+    }
+    .journey-date {
+      font-size: 11px;
+      color: #9CA3AF;
+      font-weight: 500;
+    }
+
+    /* THREE-COLUMN: Challenges / What I Learned / I'm Most Proud Of */
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 1100px) {
+      .three-col { grid-template-columns: 1fr; }
+    }
+    .col-card {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .col-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .col-header.challenges { color: #D97706; }
+    .col-header.learned { color: #059669; }
+    .col-header.proud { color: #7C3AED; }
+    .col-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .col-list li {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #374151;
+      padding-left: 18px;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .col-list li::before {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .col-list.challenges li::before { content: "•"; color: #D97706; }
+    .col-list.learned li::before { content: "✓"; color: #059669; font-weight: 700; }
+    .col-list.proud li::before { content: "★"; color: #7C3AED; }
+
+    /* WHY THIS MATTERS */
+    .matters-card {
+      background-color: #F5F3FF;
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      gap: 20px;
+      align-items: start;
+    }
+    .matters-icon {
+      width: 44px;
+      height: 44px;
+      background-color: #C4B5FD;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+    .matters-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 8px 0;
+    }
+    .matters-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4B5563;
+      margin: 0;
+    }
+
+    /* SIDEBAR PANELS */
+    .decisions-list, .future-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .decision-item {
+      display: flex;
+      gap: 12px;
+      align-items: start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .decision-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .decision-icon {
+      width: 36px;
+      height: 36px;
+      background-color: #F5F3FF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .decision-q {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 4px 0;
+    }
+    .decision-a {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #4B5563;
+      margin: 0;
+    }
+
+    .future-item {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #374151;
+    }
+    .future-item svg {
+      flex-shrink: 0;
+      color: #7C3AED;
+      margin-top: 2px;
+    }
+
+    .repo-list { display: flex; flex-direction: column; gap: 14px; }
+    .repo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .repo-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .repo-icon {
+      width: 32px;
+      height: 32px;
+      background-color: #F5F3FF;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .repo-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .repo-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0;
+    }
+    .repo-sub {
+      font-size: 12px;
+      color: #6B7280;
+      margin: 2px 0 0 0;
+    }
+    .repo-link {
+      color: #7C3AED;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+    .repo-link:hover { color: #5B21B6; }
+
+    .repro-note {
+      font-size: 12.5px;
+      color: #6B7280;
+      font-style: italic;
+      margin: 16px 0 0 0;
+    }
+  </style>
+
+  <div class="built-page">
+    <!-- HEADER -->
+    <div class="built-header">
+      <div>
+        <h1 class="built-title">How I Built This</h1>
+        <p class="built-intro">
+          [PLACEHOLDER: This project was a year-long journey of curiosity,
+          problem-solving, and learning. Here's how I built it, what I learned,
+          and what I would do differently.]
+        </p>
+      </div>
+      <div class="quote-card">
+        <span class="quote-mark">"</span>
+        <span>
+          [PLACEHOLDER: The goal wasn't just to build a dashboard — it was to
+          understand a problem deeply enough to help others see it clearly.]
+        </span>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="built-grid">
+      <div class="built-main">
+
+        <!-- JOURNEY -->
+        <div class="panel">
+          <h2 class="panel-title">The Journey</h2>
+          <div class="journey-grid">
+            <div class="journey-step">
+              <div class="journey-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </div>
+              <div class="journey-num">1</div>
+              <h4 class="journey-step-title">Finding the Problem</h4>
+              <p class="journey-step-body">
+                [PLACEHOLDER: I noticed wide regional differences in
+                Alzheimer's research funding despite similar disease burden,
+                and wanted to understand why.]
+              </p>
+              <div class="journey-date">[Jan 2024]</div>
+            </div>
+
+            <div class="journey-step">
+              <div class="journey-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+              </div>
+              <div class="journey-num">2</div>
+              <h4 class="journey-step-title">Collecting the Data</h4>
+              <p class="journey-step-body">
+                Gathered data from CDC WONDER, NIH RePORTER, NORC, Census,
+                and BLS CPI. Cleaning and standardizing across states and
+                years was the most time-consuming part.
+              </p>
+              <div class="journey-date">[Feb – Mar 2024]</div>
+            </div>
+
+            <div class="journey-step">
+              <div class="journey-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="journey-num">3</div>
+              <h4 class="journey-step-title">Analyzing &amp; Modeling</h4>
+              <p class="journey-step-body">
+                Built a two-way fixed-effects panel regression to identify
+                factors associated with NIH funding per Alzheimer's death,
+                with diagnostic and robustness checks.
+              </p>
+              <div class="journey-date">[Apr – May 2024]</div>
+            </div>
+
+            <div class="journey-step">
+              <div class="journey-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div class="journey-num">4</div>
+              <h4 class="journey-step-title">Building the Website</h4>
+              <p class="journey-step-body">
+                Turned the analysis into an interactive experience with maps
+                and charts. Ensured every number on the site matches the
+                underlying data.
+              </p>
+              <div class="journey-date">[Jun – Jul 2024]</div>
+            </div>
+
+            <div class="journey-step">
+              <div class="journey-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="journey-num">5</div>
+              <h4 class="journey-step-title">Refining &amp; Sharing</h4>
+              <p class="journey-step-body">
+                Validated every metric, polished the visuals, added
+                documentation, and made everything reproducible from the
+                public GitHub repository.
+              </p>
+              <div class="journey-date">[Aug 2024]</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHALLENGES / LEARNED / PROUD -->
+        <h2 class="panel-title" style="margin-top: 8px;">Challenges &amp; What I Learned</h2>
+        <div class="three-col">
+          <div class="col-card">
+            <div class="col-header challenges">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Challenges I Faced
+            </div>
+            <ul class="col-list challenges">
+              <li>Data inconsistencies across sources and years</li>
+              <li>CDC suppression rules eliminated many small state-year cells, making rural states harder to analyze</li>
+              <li>Aligning fiscal-year funding data with calendar-year mortality data</li>
+              <li>Choosing the right geographic level given data limitations</li>
+              <li>Building a responsive site fast enough to handle a 51 × 5 panel of geographic data</li>
+            </ul>
+          </div>
+
+          <div class="col-card">
+            <div class="col-header learned">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21h6"/><path d="M12 17v4"/><path d="M12 3a6 6 0 0 1 6 6c0 3-2 4-2 6H8c0-2-2-3-2-6a6 6 0 0 1 6-6z"/></svg>
+              What I Learned
+            </div>
+            <ul class="col-list learned">
+              <li>Data cleaning <em>is</em> research — most of the analytical insight comes from understanding the data</li>
+              <li>Good visualization design makes complex patterns clear in a way tables never can</li>
+              <li>Small modeling choices (denominators, definitions) materially change conclusions</li>
+              <li>It's okay to change direction when an approach isn't working</li>
+              <li>Reproducibility is what separates a project from a prototype</li>
+            </ul>
+          </div>
+
+          <div class="col-card">
+            <div class="col-header proud">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              I'm Most Proud Of
+            </div>
+            <ul class="col-list proud">
+              <li>Turning a complex research question into something visual and intuitive</li>
+              <li>Building a one-source-of-truth pipeline so every displayed number traces back to code</li>
+              <li>Highlighting inequities that are easy to overlook in aggregated national statistics</li>
+              <li>Making all code, data, and methodology open and reproducible</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- WHY THIS MATTERS -->
+        <div class="matters-card">
+          <div class="matters-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div>
+            <h3 class="matters-title">Why This Matters to Me</h3>
+            <p class="matters-body">
+              [PLACEHOLDER — write in your own voice: Share why you chose
+              Alzheimer's specifically, what drew you to the question of
+              research funding equity, and what you hope this project can
+              contribute. 2-3 sentences. Be specific and personal.]
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="built-side">
+        <div class="panel">
+          <h2 class="panel-title">Design Decisions</h2>
+          <div class="decisions-list">
+            <div class="decision-item">
+              <div class="decision-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              </div>
+              <div>
+                <p class="decision-q">Why state level?</p>
+                <p class="decision-a">CDC suppression rules (cells under 10 deaths) removed too many counties for a stable county-level analysis.</p>
+              </div>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+              <div>
+                <p class="decision-q">Why these metrics?</p>
+                <p class="decision-a">Funding per death and per 65+ resident put the data in policy-relevant terms — cost per case rather than raw dollars.</p>
+              </div>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div>
+                <p class="decision-q">Why this regression model?</p>
+                <p class="decision-a">A two-way fixed-effects panel regression controls for unobserved state and year factors, giving more credible estimates than a simple OLS.</p>
+              </div>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="decision-q">Why open source?</p>
+                <p class="decision-a">Transparency and reproducibility are essential for research that informs public policy.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">If I Had More Time, I Would...</h2>
+          <div class="future-list">
+            <div class="future-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Incorporate lagged effects (5–10 years) between funding and mortality</span>
+            </div>
+            <div class="future-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Expand the analysis to county level as more granular data becomes available</span>
+            </div>
+            <div class="future-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Add uncertainty intervals and sensitivity analysis</span>
+            </div>
+            <div class="future-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Explore qualitative factors like state research infrastructure policies</span>
+            </div>
+            <div class="future-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Build a tool for policymakers to export custom state reports</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Code, Data &amp; Reproducibility</h2>
+          <div class="repo-list">
+            <div class="repo-row">
+              <div class="repo-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              </div>
+              <div class="repo-text">
+                <p class="repo-label">GitHub Repository</p>
+                <p class="repo-sub">Code, data, and documentation</p>
+              </div>
+              <a class="repo-link" href="https://github.com/neha-k-reddy/alzheimers-funding-alignment" target="_blank" rel="noopener">github.com/neha-k-reddy/...</a>
+            </div>
+            <div class="repo-row">
+              <div class="repo-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="repo-text">
+                <p class="repo-label">Research Paper</p>
+                <p class="repo-sub">Full paper with methodology and results</p>
+              </div>
+              <a class="repo-link" href="/paper.pdf" target="_blank" rel="noopener">paper.pdf</a>
+            </div>
+            <div class="repo-row">
+              <div class="repo-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+              </div>
+              <div class="repo-text">
+                <p class="repo-label">Processed Dataset</p>
+                <p class="repo-sub">Final 51 × 5 state-year panel</p>
+              </div>
+              <a class="repo-link" href="https://github.com/neha-k-reddy/alzheimers-funding-alignment/blob/main/data/final_dataset.csv" target="_blank" rel="noopener">final_dataset.csv</a>
+            </div>
+          </div>
+          <p class="repro-note">
+            Everything you see on this site can be reproduced from the code and data.
+            Last updated: {lastUpdated}.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </Layout>

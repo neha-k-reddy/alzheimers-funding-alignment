@@ -1,7 +1,776 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import numbers from "../../public/data/numbers.json";
+
+const stateYear = numbers.state_year;
+const nationalYearly = numbers.national_yearly;
+const regional = numbers.regional.pooled_2019_2023;
+const rankings = numbers.rankings_5yr_avg;
+const lastUpdated = numbers.metadata.last_updated;
+
+const top5 = rankings.slice(0, 5);
+const bottom5 = rankings.slice(-5).reverse();
+
+const ratio = numbers.landing.ne_to_west_ratio;
+const ratioDisplay = numbers.landing.ne_to_west_ratio_display;
+
+// 2023 totals from national yearly
+const totals2023 = nationalYearly[nationalYearly.length - 1];
+
+function formatCurrency(value: number): string {
+  return "$" + Math.round(value).toLocaleString("en-US");
+}
+
+function formatBillion(value: number): string {
+  return "$" + (value / 1e9).toFixed(2) + "B";
+}
 ---
 
 <Layout title="Explore the Data — Alzheimer's Funding Alignment">
-  <h1 class="text-4xl font-bold pt-32 px-6">Explore the Data</h1>
+  <style is:global>
+    .explore-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px 80px 24px;
+    }
+    .explore-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .explore-grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 22px;
+    }
+
+    /* LEFT SIDEBAR */
+    .left-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 6px 0;
+    }
+    .left-intro {
+      font-size: 13px;
+      color: #6B7280;
+      line-height: 1.5;
+      margin: 0 0 22px 0;
+    }
+    .control-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: #6B7280;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .control-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      background-color: white;
+      font-size: 14px;
+      color: #0F1535;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .control-help {
+      font-size: 12px;
+      color: #6B7280;
+      line-height: 1.5;
+      margin: 8px 0 22px 0;
+    }
+    .year-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .year-display {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0F1535;
+    }
+    .year-arrow {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      background-color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6B7280;
+    }
+    .year-arrow:hover { background-color: #F5F3FF; color: #7C3AED; }
+    .year-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+    .year-slider {
+      width: 100%;
+      margin: 8px 0;
+      accent-color: #7C3AED;
+    }
+    .year-marks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-bottom: 22px;
+    }
+    .legend-block {
+      margin-top: 8px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .legend-sw {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .howto-box {
+      background-color: #F5F3FF;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 22px;
+    }
+    .howto-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 8px 0;
+    }
+    .howto-step {
+      font-size: 12.5px;
+      color: #4B5563;
+      line-height: 1.5;
+      margin: 4px 0;
+      display: flex;
+      gap: 6px;
+    }
+    .howto-step-num {
+      color: #7C3AED;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* CENTER MAP AREA */
+    .map-card {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .map-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 18px 0;
+    }
+    #explore-map { width: 100%; min-height: 460px; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    @media (max-width: 800px) {
+      .stats-row { grid-template-columns: 1fr; }
+    }
+    .stat-panel {
+      background-color: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .stat-panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 14px 0;
+    }
+    .overview-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .overview-row:last-child { margin-bottom: 0; }
+    .overview-icon {
+      width: 30px;
+      height: 30px;
+      background-color: #F5F3FF;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7C3AED;
+      flex-shrink: 0;
+    }
+    .overview-label {
+      font-size: 12px;
+      color: #6B7280;
+      margin: 0;
+    }
+    .overview-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0;
+    }
+    .overview-spacer { flex: 1; }
+    .overview-right {
+      text-align: right;
+    }
+
+    #regional-chart, #yearly-chart {
+      width: 100%;
+      height: 220px;
+    }
+    .chart-note {
+      font-size: 11.5px;
+      color: #6B7280;
+      margin: 8px 0 0 0;
+      line-height: 1.45;
+    }
+
+    /* RIGHT SIDEBAR — RANKINGS */
+    .ranking-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1535;
+      margin: 0 0 4px 0;
+    }
+    .ranking-sub {
+      font-size: 12px;
+      color: #6B7280;
+      margin: 0 0 14px 0;
+    }
+    .ranking-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #F3F4F6;
+      font-size: 13px;
+    }
+    .ranking-row:last-child { border-bottom: none; }
+    .rank-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+    .rank-badge.top { background-color: #7C3AED; }
+    .rank-badge.bottom { background-color: #F472B6; }
+    .rank-state { flex: 1; color: #374151; font-weight: 500; }
+    .rank-value {
+      font-variant-numeric: tabular-nums;
+      color: #0F1535;
+      font-weight: 700;
+    }
+    .rankings-divider {
+      height: 1px;
+      background-color: #E5E7EB;
+      margin: 18px 0;
+    }
+    .rankings-foot {
+      font-size: 11.5px;
+      color: #9CA3AF;
+      line-height: 1.45;
+      margin-top: 12px;
+    }
+
+    .footer-bar {
+      max-width: 1280px;
+      margin: 24px auto 0 auto;
+      padding: 14px 24px;
+      background-color: #F5F3FF;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #4B5563;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+
+  <div class="explore-page">
+    <div class="explore-grid">
+
+      <!-- LEFT SIDEBAR — CONTROLS -->
+      <div class="panel">
+        <h2 class="left-title">Explore the Data</h2>
+        <p class="left-intro">
+          Visualize Alzheimer's burden, research funding, and disparities
+          across the U.S.
+        </p>
+
+        <div class="control-label">Select Metric</div>
+        <select id="metric-select" class="control-select">
+          <option value="funding_per_death" selected>NIH Funding per Alzheimer's Death</option>
+          <option value="total_funding">Total NIH Funding</option>
+          <option value="total_deaths">Alzheimer's Deaths</option>
+          <option value="mortality_rate_per_100k">Mortality Rate (per 100k)</option>
+          <option value="population_65plus">Population 65+</option>
+          <option value="num_r1_universities">R1 Universities</option>
+        </select>
+        <p class="control-help" id="metric-help">
+          NIH research dollars divided by Alzheimer's-related deaths in the same year.
+        </p>
+
+        <div class="control-label">Select Year</div>
+        <div class="year-row">
+          <button class="year-arrow" id="year-prev" aria-label="Previous year">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="year-display" id="year-display">2023</div>
+          <button class="year-arrow" id="year-next" aria-label="Next year">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <input type="range" id="year-slider" class="year-slider" min="2019" max="2023" value="2023" step="1" />
+        <div class="year-marks">
+          <span>2019</span><span>2020</span><span>2021</span><span>2022</span><span>2023</span>
+        </div>
+
+        <div class="control-label" style="margin-top: 8px;">Map Legend</div>
+        <div class="legend-block" id="legend-block">
+          <!-- Filled by JS based on metric -->
+        </div>
+
+        <div class="howto-box">
+          <p class="howto-title">How to use</p>
+          <div class="howto-step"><span class="howto-step-num">1.</span><span>Choose a metric and year.</span></div>
+          <div class="howto-step"><span class="howto-step-num">2.</span><span>Hover over a state to see details.</span></div>
+          <div class="howto-step"><span class="howto-step-num">3.</span><span>Compare regional and time trends below.</span></div>
+        </div>
+      </div>
+
+      <!-- CENTER — MAP + STATS -->
+      <div>
+        <div class="map-card">
+          <h3 class="map-card-title" id="map-card-title">NIH Funding per Alzheimer's Death by State (2023)</h3>
+          <div id="explore-map"></div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-panel">
+            <p class="stat-panel-title">National Overview <span id="overview-year-label" style="color: #6B7280; font-weight: 500;">(2023)</span></p>
+
+            <div class="overview-row">
+              <div class="overview-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6 5.87v-2a4 4 0 0 0-3-3.87M9 8a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"/></svg>
+              </div>
+              <div>
+                <p class="overview-label">AD Deaths (Panel)</p>
+              </div>
+              <div class="overview-spacer"></div>
+              <div class="overview-right">
+                <p class="overview-value" id="ov-deaths">—</p>
+              </div>
+            </div>
+
+            <div class="overview-row">
+              <div class="overview-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <p class="overview-label">NIH Funding</p>
+              </div>
+              <div class="overview-spacer"></div>
+              <div class="overview-right">
+                <p class="overview-value" id="ov-funding">—</p>
+              </div>
+            </div>
+
+            <div class="overview-row">
+              <div class="overview-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <p class="overview-label">Funding per Death</p>
+              </div>
+              <div class="overview-spacer"></div>
+              <div class="overview-right">
+                <p class="overview-value" id="ov-fpd">—</p>
+              </div>
+            </div>
+
+            <div class="overview-row">
+              <div class="overview-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div>
+                <p class="overview-label">NE vs. West Gap</p>
+              </div>
+              <div class="overview-spacer"></div>
+              <div class="overview-right">
+                <p class="overview-value">{ratioDisplay}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <p class="stat-panel-title">Funding per Death by Region (2019–2023 avg)</p>
+            <div id="regional-chart"></div>
+          </div>
+
+          <div class="stat-panel">
+            <p class="stat-panel-title">Funding per Death Over Time (Panel)</p>
+            <div id="yearly-chart"></div>
+            <p class="chart-note">
+              2020 plateau reflects COVID-19 mortality spike; total funding kept rising
+              while the funding-per-death ratio paused.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR — RANKINGS -->
+      <div class="panel">
+        <p class="ranking-title">Top 5 States</p>
+        <p class="ranking-sub">By NIH funding per death (2019–2023 avg)</p>
+        {top5.map((s) => (
+          <div class="ranking-row">
+            <div class="rank-badge top">{s.rank}</div>
+            <div class="rank-state">{s.state}</div>
+            <div class="rank-value">{formatCurrency(s.value)}</div>
+          </div>
+        ))}
+
+        <div class="rankings-divider"></div>
+
+        <p class="ranking-title">Bottom 5 States</p>
+        <p class="ranking-sub">By NIH funding per death (2019–2023 avg)</p>
+        {bottom5.map((s) => (
+          <div class="ranking-row">
+            <div class="rank-badge bottom">{s.rank}</div>
+            <div class="rank-state">{s.state}</div>
+            <div class="rank-value">{formatCurrency(s.value)}</div>
+          </div>
+        ))}
+
+        <p class="rankings-foot">
+          Rankings computed from the same dataset as the published paper.
+          Full state list available in the GitHub repository.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <div>Data sources: CDC WONDER (2019–2023) · NIH RePORTER (2019–2023) · NORC Dementia DataHub · U.S. Census Bureau · BLS CPI</div>
+      <div>Last updated: {lastUpdated}</div>
+    </div>
+  </div>
+
+  <!-- Embedded data for client script -->
+  <script type="application/json" id="explore-state-year" set:html={JSON.stringify(stateYear)}></script>
+  <script type="application/json" id="explore-national-yearly" set:html={JSON.stringify(nationalYearly)}></script>
+  <script type="application/json" id="explore-regional" set:html={JSON.stringify(regional)}></script>
+
+  <script is:inline src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <script is:inline>
+    document.addEventListener("DOMContentLoaded", function () {
+      var stateYear = JSON.parse(document.getElementById("explore-state-year").textContent);
+      var nationalYearly = JSON.parse(document.getElementById("explore-national-yearly").textContent);
+      var regional = JSON.parse(document.getElementById("explore-regional").textContent);
+
+      var bucketColors = ["#FCE7F3", "#F9A8D4", "#A78BFA", "#7C3AED", "#4C1D95"];
+
+      var metricConfig = {
+        funding_per_death: {
+          label: "NIH Funding per Alzheimer's Death",
+          help: "NIH research dollars divided by Alzheimer's-related deaths in the same year.",
+          format: function (v) { return "$" + Math.round(v).toLocaleString("en-US"); },
+          buckets: [
+            { max: 20000, color: bucketColors[0], label: "Less than $20,000" },
+            { max: 40000, color: bucketColors[1], label: "$20,000 – $40,000" },
+            { max: 60000, color: bucketColors[2], label: "$40,000 – $60,000" },
+            { max: 80000, color: bucketColors[3], label: "$60,000 – $80,000" },
+            { max: Infinity, color: bucketColors[4], label: "$80,000 or more" }
+          ]
+        },
+        total_funding: {
+          label: "Total NIH Funding",
+          help: "Total NIH Alzheimer's research funding awarded to institutions in the state.",
+          format: function (v) { return "$" + (v / 1e6).toFixed(1) + "M"; },
+          buckets: [
+            { max: 10e6, color: bucketColors[0], label: "Less than $10M" },
+            { max: 50e6, color: bucketColors[1], label: "$10M – $50M" },
+            { max: 100e6, color: bucketColors[2], label: "$50M – $100M" },
+            { max: 250e6, color: bucketColors[3], label: "$100M – $250M" },
+            { max: Infinity, color: bucketColors[4], label: "$250M or more" }
+          ]
+        },
+        total_deaths: {
+          label: "Alzheimer's Deaths",
+          help: "Total Alzheimer's deaths in the state-year (CDC WONDER, ICD-10 G30).",
+          format: function (v) { return v.toLocaleString("en-US"); },
+          buckets: [
+            { max: 200, color: bucketColors[0], label: "< 200" },
+            { max: 1000, color: bucketColors[1], label: "200 – 1,000" },
+            { max: 2500, color: bucketColors[2], label: "1,000 – 2,500" },
+            { max: 5000, color: bucketColors[3], label: "2,500 – 5,000" },
+            { max: Infinity, color: bucketColors[4], label: "5,000 or more" }
+          ]
+        },
+        mortality_rate_per_100k: {
+          label: "Mortality Rate (per 100k)",
+          help: "Alzheimer's deaths per 100,000 residents.",
+          format: function (v) { return v.toFixed(1) + " per 100k"; },
+          buckets: [
+            { max: 10, color: bucketColors[0], label: "< 10" },
+            { max: 18, color: bucketColors[1], label: "10 – 18" },
+            { max: 26, color: bucketColors[2], label: "18 – 26" },
+            { max: 34, color: bucketColors[3], label: "26 – 34" },
+            { max: Infinity, color: bucketColors[4], label: "34 or more" }
+          ]
+        },
+        population_65plus: {
+          label: "Population 65+",
+          help: "Number of state residents aged 65 and older.",
+          format: function (v) { return v.toLocaleString("en-US"); },
+          buckets: [
+            { max: 250000, color: bucketColors[0], label: "< 250,000" },
+            { max: 750000, color: bucketColors[1], label: "250K – 750K" },
+            { max: 1500000, color: bucketColors[2], label: "750K – 1.5M" },
+            { max: 3000000, color: bucketColors[3], label: "1.5M – 3M" },
+            { max: Infinity, color: bucketColors[4], label: "3M or more" }
+          ]
+        },
+        num_r1_universities: {
+          label: "R1 Research Universities",
+          help: "Number of R1 (highest research activity) universities in the state.",
+          format: function (v) { return v + (v === 1 ? " university" : " universities"); },
+          buckets: [
+            { max: 1, color: bucketColors[0], label: "0" },
+            { max: 2, color: bucketColors[1], label: "1" },
+            { max: 4, color: bucketColors[2], label: "2 – 3" },
+            { max: 8, color: bucketColors[3], label: "4 – 7" },
+            { max: Infinity, color: bucketColors[4], label: "8 or more" }
+          ]
+        }
+      };
+
+      function bucketIndex(v, buckets) {
+        for (var i = 0; i < buckets.length; i++) {
+          if (v < buckets[i].max) return i;
+        }
+        return buckets.length - 1;
+      }
+
+      function discreteScale(buckets) {
+        var scale = [];
+        for (var i = 0; i < buckets.length; i++) {
+          var lo = i / buckets.length;
+          var hi = (i + 1) / buckets.length;
+          scale.push([lo, buckets[i].color]);
+          scale.push([hi, buckets[i].color]);
+        }
+        return scale;
+      }
+
+      function renderLegend(metric) {
+        var cfg = metricConfig[metric];
+        var html = "";
+        for (var i = cfg.buckets.length - 1; i >= 0; i--) {
+          html += '<div class="legend-row"><div class="legend-sw" style="background-color:' + cfg.buckets[i].color + ';"></div>' + cfg.buckets[i].label + '</div>';
+        }
+        document.getElementById("legend-block").innerHTML = html;
+      }
+
+      function renderMap(year, metric) {
+        var cfg = metricConfig[metric];
+        var data = stateYear[String(year)];
+        var stateCodes = [];
+        var bucketVals = [];
+        var hoverText = [];
+
+        Object.keys(data).forEach(function (code) {
+          var d = data[code];
+          var v = d[metric];
+          if (v === null || v === undefined) return;
+          stateCodes.push(code);
+          bucketVals.push(bucketIndex(v, cfg.buckets));
+          hoverText.push(
+            "<b>" + d.state_name + "</b><br>" +
+            cfg.label + ": " + cfg.format(v) + "<br>" +
+            "Funding per Death: $" + Math.round(d.funding_per_death || 0).toLocaleString("en-US") + "<br>" +
+            "Total Deaths: " + (d.total_deaths || 0).toLocaleString("en-US") + "<br>" +
+            "NIH Funding: $" + Math.round(d.total_funding || 0).toLocaleString("en-US") +
+            "<extra></extra>"
+          );
+        });
+
+        var trace = [{
+          type: "choropleth",
+          locationmode: "USA-states",
+          locations: stateCodes,
+          z: bucketVals,
+          text: hoverText,
+          hovertemplate: "%{text}",
+          colorscale: discreteScale(cfg.buckets),
+          zmin: 0,
+          zmax: cfg.buckets.length - 1,
+          showscale: false,
+          marker: { line: { color: "white", width: 1 } }
+        }];
+
+        var layout = {
+          geo: {
+            scope: "usa",
+            projection: { type: "albers usa" },
+            showlakes: false,
+            bgcolor: "rgba(0,0,0,0)"
+          },
+          margin: { t: 0, b: 0, l: 0, r: 0 },
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)",
+          font: { family: "Inter, system-ui, sans-serif" },
+          height: 460
+        };
+
+        Plotly.react("explore-map", trace, layout, { responsive: true, displayModeBar: false, scrollZoom: false });
+
+        document.getElementById("map-card-title").textContent =
+          cfg.label + " by State (" + year + ")";
+        document.getElementById("metric-help").textContent = cfg.help;
+        renderLegend(metric);
+      }
+
+      function renderRegionalChart() {
+        var regions = ["Northeast", "South", "Midwest", "West"];
+        var values = regions.map(function (r) { return regional[r].funding_per_death; });
+        var trace = [{
+          type: "bar",
+          x: regions,
+          y: values,
+          marker: { color: ["#7C3AED", "#A78BFA", "#C4B5FD", "#F472B6"] },
+          text: values.map(function (v) { return "$" + Math.round(v).toLocaleString("en-US"); }),
+          textposition: "outside",
+          hovertemplate: "<b>%{x}</b><br>$%{y:,.0f}<extra></extra>"
+        }];
+        var layout = {
+          margin: { t: 20, b: 28, l: 50, r: 12 },
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)",
+          font: { family: "Inter, system-ui, sans-serif", size: 11 },
+          xaxis: { showgrid: false, tickfont: { size: 11, color: "#374151" } },
+          yaxis: {
+            tickprefix: "$",
+            tickformat: ",",
+            tickfont: { size: 10, color: "#6B7280" },
+            gridcolor: "#F3F4F6",
+            zeroline: false
+          },
+          height: 220
+        };
+        Plotly.react("regional-chart", trace, layout, { responsive: true, displayModeBar: false });
+      }
+
+      function renderYearlyChart() {
+        var years = nationalYearly.map(function (y) { return y.year; });
+        var values = nationalYearly.map(function (y) { return y.funding_per_death_panel; });
+        var trace = [{
+          type: "scatter",
+          mode: "lines+markers",
+          x: years,
+          y: values,
+          line: { color: "#7C3AED", width: 3 },
+          marker: { size: 8, color: "#7C3AED" },
+          hovertemplate: "<b>%{x}</b><br>$%{y:,.0f} per death<extra></extra>"
+        }];
+        var layout = {
+          margin: { t: 20, b: 32, l: 56, r: 12 },
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)",
+          font: { family: "Inter, system-ui, sans-serif", size: 11 },
+          xaxis: {
+            tickmode: "array",
+            tickvals: years,
+            tickfont: { size: 11, color: "#374151" },
+            showgrid: false
+          },
+          yaxis: {
+            tickprefix: "$",
+            tickformat: ",",
+            tickfont: { size: 10, color: "#6B7280" },
+            gridcolor: "#F3F4F6",
+            zeroline: false
+          },
+          height: 220
+        };
+        Plotly.react("yearly-chart", trace, layout, { responsive: true, displayModeBar: false });
+      }
+
+      function updateOverview(year) {
+        var rec = nationalYearly.find(function (y) { return y.year === year; });
+        if (!rec) return;
+        document.getElementById("ov-deaths").textContent = rec.total_deaths_panel.toLocaleString("en-US");
+        document.getElementById("ov-funding").textContent = "$" + (rec.total_funding / 1e9).toFixed(2) + "B";
+        document.getElementById("ov-fpd").textContent = "$" + Math.round(rec.funding_per_death_panel).toLocaleString("en-US");
+        document.getElementById("overview-year-label").textContent = "(" + year + ")";
+      }
+
+      // State
+      var currentYear = 2023;
+      var currentMetric = "funding_per_death";
+
+      // Initial render
+      renderMap(currentYear, currentMetric);
+      updateOverview(currentYear);
+      renderRegionalChart();
+      renderYearlyChart();
+
+      // Wiring
+      var slider = document.getElementById("year-slider");
+      var display = document.getElementById("year-display");
+      var prevBtn = document.getElementById("year-prev");
+      var nextBtn = document.getElementById("year-next");
+      var metricSel = document.getElementById("metric-select");
+
+      function setYear(y) {
+        currentYear = parseInt(y, 10);
+        slider.value = currentYear;
+        display.textContent = currentYear;
+        prevBtn.disabled = currentYear <= 2019;
+        nextBtn.disabled = currentYear >= 2023;
+        renderMap(currentYear, currentMetric);
+        updateOverview(currentYear);
+      }
+
+      slider.addEventListener("input", function () { setYear(slider.value); });
+      prevBtn.addEventListener("click", function () { if (currentYear > 2019) setYear(currentYear - 1); });
+      nextBtn.addEventListener("click", function () { if (currentYear < 2023) setYear(currentYear + 1); });
+      metricSel.addEventListener("change", function () {
+        currentMetric = metricSel.value;
+        renderMap(currentYear, currentMetric);
+      });
+
+      setYear(2023);
+    });
+  </script>
 </Layout>
