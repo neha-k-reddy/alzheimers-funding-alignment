@@ -7,3 +7,4 @@ dist/
 *.log
 site/.claude/
 site/.claude/
+site/.vscode/
