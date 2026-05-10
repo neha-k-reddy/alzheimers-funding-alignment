@@ -6,3 +6,4 @@ dist/
 .vercel
 *.log
 site/.claude/
+site/.claude/
