@@ -5,6 +5,8 @@ import numbers from "../../public/data/numbers.json";
 const ne = numbers.landing.northeast_funding_per_death;
 const west = numbers.landing.west_funding_per_death;
 const ratio = numbers.landing.ne_to_west_ratio_display;
+const stateData2023 = numbers.state_year["2023"];
+const lastUpdated = numbers.metadata.last_updated;
 
 function formatCurrency(value: number): string {
   return "$" + Math.round(value).toLocaleString("en-US");
@@ -12,7 +14,8 @@ function formatCurrency(value: number): string {
 ---
 
 <Layout title="Home — Alzheimer's Funding Alignment">
-  <style>
+  <style is:global>
+    /* HERO */
     .hero-section {
       max-width: 1280px;
       margin: 0 auto;
@@ -23,9 +26,7 @@ function formatCurrency(value: number): string {
       align-items: start;
     }
     @media (max-width: 900px) {
-      .hero-section {
-        grid-template-columns: 1fr;
-      }
+      .hero-section { grid-template-columns: 1fr; }
     }
     .pill {
       display: inline-block;
@@ -47,9 +48,7 @@ function formatCurrency(value: number): string {
       margin: 0 0 24px 0;
       letter-spacing: -0.02em;
     }
-    .hero-headline .accent {
-      color: #7C3AED;
-    }
+    .hero-headline .accent { color: #7C3AED; }
     .hero-subhead {
       font-size: 16px;
       line-height: 1.6;
@@ -57,11 +56,7 @@ function formatCurrency(value: number): string {
       margin: 0 0 32px 0;
       max-width: 520px;
     }
-    .cta-row {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
+    .cta-row { display: flex; align-items: center; gap: 24px; }
     .cta-primary {
       display: inline-flex;
       align-items: center;
@@ -74,9 +69,7 @@ function formatCurrency(value: number): string {
       font-size: 15px;
       font-weight: 500;
     }
-    .cta-primary:hover {
-      background-color: #0F1535;
-    }
+    .cta-primary:hover { background-color: #0F1535; }
     .cta-secondary {
       color: #4B5563;
       font-size: 15px;
@@ -86,9 +79,9 @@ function formatCurrency(value: number): string {
       align-items: center;
       gap: 4px;
     }
-    .cta-secondary:hover {
-      color: #0F1535;
-    }
+    .cta-secondary:hover { color: #0F1535; }
+
+    /* STAT CARD */
     .stat-card {
       background-color: #1A1A3E;
       background-image: linear-gradient(135deg, #1A1A3E 0%, #261B4A 100%);
@@ -190,6 +183,72 @@ function formatCurrency(value: number): string {
       position: relative;
       z-index: 1;
     }
+
+    /* MAP */
+    .map-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 24px 64px 24px;
+    }
+    .map-card {
+      background-color: white;
+      border-radius: 16px;
+      border: 1px solid #E5E7EB;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .map-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0F1535;
+      margin: 0;
+    }
+    .map-subtitle {
+      font-size: 14px;
+      color: #6B7280;
+      margin: 4px 0 24px 0;
+    }
+    .map-body {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .map-body { grid-template-columns: 1fr; }
+    }
+    .legend-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #374151;
+    }
+    .legend-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .map-container { width: 100%; min-height: 480px; }
+    .map-footer {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #6B7280;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
   </style>
 
   <section class="hero-section">
@@ -230,4 +289,128 @@ function formatCurrency(value: number): string {
       <div class="ratio-caption">in the Northeast compared to the West</div>
     </div>
   </section>
+
+  <section class="map-section">
+    <div class="map-card">
+      <h2 class="map-title">NIH Funding per Alzheimer's Death by State (2023)</h2>
+      <p class="map-subtitle">Hover over a state to see details.</p>
+
+      <div class="map-body">
+        <div>
+          <div class="legend-title">USD per Death</div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background-color: #4C1D95;"></div>
+            $80,000 or more
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background-color: #7C3AED;"></div>
+            $60,000 – $80,000
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background-color: #A78BFA;"></div>
+            $40,000 – $60,000
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background-color: #F9A8D4;"></div>
+            $20,000 – $40,000
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background-color: #FCE7F3;"></div>
+            Less than $20,000
+          </div>
+        </div>
+
+        <div id="choropleth-map" class="map-container"></div>
+      </div>
+
+      <div class="map-footer">
+        <div>
+          Data sources: CDC WONDER (2019–2023), NIH RePORTER (2023),
+          NORC Dementia DataHub, U.S. Census Bureau, BLS CPI
+        </div>
+        <div>Last updated: {lastUpdated}</div>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="state-data-2023" set:html={JSON.stringify(stateData2023)}></script>
+  <script is:inline src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script is:inline>
+    document.addEventListener("DOMContentLoaded", function () {
+      var raw = document.getElementById("state-data-2023").textContent;
+      var stateData = JSON.parse(raw);
+
+      function bucketIndex(v) {
+        if (v < 20000) return 0;
+        if (v < 40000) return 1;
+        if (v < 60000) return 2;
+        if (v < 80000) return 3;
+        return 4;
+      }
+
+      var bucketColors = ["#FCE7F3", "#F9A8D4", "#A78BFA", "#7C3AED", "#4C1D95"];
+
+      var stateCodes = [];
+      var bucketValues = [];
+      var hoverText = [];
+
+      var fmt = function (n) {
+        return "$" + Math.round(n).toLocaleString("en-US");
+      };
+
+      Object.keys(stateData).forEach(function (code) {
+        var d = stateData[code];
+        if (d.funding_per_death === null) return;
+        stateCodes.push(code);
+        bucketValues.push(bucketIndex(d.funding_per_death));
+        hoverText.push(
+          "<b>" + d.state_name + "</b><br>" +
+          "Funding per Death: " + fmt(d.funding_per_death) + "<br>" +
+          "Total Deaths: " + d.total_deaths.toLocaleString("en-US") + "<br>" +
+          "NIH Funding: " + fmt(d.total_funding) +
+          "<extra></extra>"
+        );
+      });
+
+      // Discrete colorscale: 5 buckets, each maps to a fixed color band
+      var discreteColorscale = [
+        [0.0, bucketColors[0]], [0.2, bucketColors[0]],
+        [0.2, bucketColors[1]], [0.4, bucketColors[1]],
+        [0.4, bucketColors[2]], [0.6, bucketColors[2]],
+        [0.6, bucketColors[3]], [0.8, bucketColors[3]],
+        [0.8, bucketColors[4]], [1.0, bucketColors[4]]
+      ];
+
+      var data = [{
+        type: "choropleth",
+        locationmode: "USA-states",
+        locations: stateCodes,
+        z: bucketValues,
+        text: hoverText,
+        hovertemplate: "%{text}",
+        colorscale: discreteColorscale,
+        zmin: 0,
+        zmax: 4,
+        showscale: false,
+        marker: { line: { color: "white", width: 1 } }
+      }];
+
+      var layout = {
+        geo: {
+          scope: "usa",
+          projection: { type: "albers usa" },
+          showlakes: false,
+          bgcolor: "rgba(0,0,0,0)"
+        },
+        margin: { t: 0, b: 0, l: 0, r: 0 },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { family: "Inter, system-ui, sans-serif" },
+        height: 480
+      };
+
+      var config = { responsive: true, displayModeBar: false, scrollZoom: false };
+      Plotly.newPlot("choropleth-map", data, layout, config);
+    });
+  </script>
 </Layout>
